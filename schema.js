@@ -1,40 +1,28 @@
 const graphql = require('graphql');
-const axios = require('axios');
-const {
-    GraphQLObjectType,
-    GraphQLString,
-    GraphQLInt,
-    GraphQLSchema,
-    GraphQLList,
-} = graphql;
 
-const userType = new GraphQLObjectType({
-    name: 'user',
-    fields: () => ({
-        id: { type: GraphQLString },
-        email: { type: GraphQLString },
-    }),
-});
+const { fetchData } = require('./firebase.util');
 
-const RootQuary = new GraphQLObjectType({
-    name: 'RootQueryType',
-    fields: {
-        user: {
-            type: userType,
-            args: { id: { type: GraphQLString } },
-            resolve(root, args) {
-                return axios
-                    .get(
-                        `https://jsonplaceholder.typicode.com/users/${args.id}`
-                    )
-                    .then((res) => {
-                        return res.data;
-                    });
-            },
-        },
+const Shcema = graphql.buildSchema(`
+type SearchResultType {
+  distance: Int,
+  userId:String,
+  name:String,
+  formattedAddress:[String]
+
+}
+type Query {
+  SearchResult(type:String,userId:String): [SearchResultType]
+}
+`);
+
+const rootResolver = {
+    SearchResult: async (args) => {
+        console.log(args.type);
+        return await fetchData(args.type, args.userId);
     },
-});
+};
 
-module.exports = new GraphQLSchema({
-    query: RootQuary,
-});
+module.exports = {
+    schema: Shcema,
+    resolver: rootResolver,
+};
